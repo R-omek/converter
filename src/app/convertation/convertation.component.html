@@ -1,0 +1,19 @@
+<main class="flex align-items-center">
+    <div class="p-field flex gap-2">
+        <div [formGroup]="leftSide" class="p-field flex gap-2">
+            <p-dropdown [options]="currencies" formControlName="leftDrop"></p-dropdown>
+            <p-inputNumber inputId="integeronly" formControlName="leftInput"></p-inputNumber>
+        </div>
+        <div class="flex align-items-center">
+            <p-button 
+            (onClick)="replace()" 
+            icon="pi pi-arrows-v"
+            styleClass="p-button-rounded p-button-secondary p-button-text"
+            ></p-button>
+        </div>
+        <div [formGroup]="rightSide" class="p-field flex gap-2">
+            <p-inputNumber inputId="integeronly" formControlName="rightInput"></p-inputNumber>
+            <p-dropdown [options]="currencies" formControlName="rightDrop"></p-dropdown>
+        </div>
+    </div>
+</main>

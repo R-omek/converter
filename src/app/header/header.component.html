@@ -1,0 +1,7 @@
+<header>
+    <ul class="rates-list flex gap-2" *ngIf="usd !== null && eur !== null">
+        <li><span>Курс долара: </span>{{ usd.rates.UAH.toFixed(2) }}</li>
+        <span>/</span>
+        <li><span>Курс євро: </span>{{ eur.rates.UAH.toFixed(2) }}</li>
+    </ul>
+</header>
