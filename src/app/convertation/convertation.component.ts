@@ -19,10 +19,12 @@ export class ConvertationComponent implements OnInit {
   currentRateUSD!: CurrencyInfo
   currentRateEUR!: CurrencyInfo
 
+  falseEmitEvent =  { emitEvent: false }
+
 
   leftSide = new FormGroup({
     leftInput: new FormControl(0),
-    leftDrop: new FormControl('USD'),
+    leftDrop: new FormControl('USD')
   })
   rightSide = new FormGroup({
     rightInput: new FormControl(0),
@@ -37,7 +39,7 @@ export class ConvertationComponent implements OnInit {
     this.api.getCurrentExchange('UAH').subscribe((resp) => this.currentRateUAH = resp)
     this.api.getCurrentExchange('USD').subscribe((resp) => this.currentRateUSD = resp)
     this.api.getCurrentExchange('EUR').subscribe((resp) => this.currentRateEUR = resp)
-    
+
     this.leftSide.valueChanges.subscribe(
       () => {
         this.changeRightSide()
@@ -51,55 +53,43 @@ export class ConvertationComponent implements OnInit {
     )
   }
 
-  changeLeftSide() {
-    if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'UAH') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateUSD.rates.UAH}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'UAH') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateEUR.rates.UAH}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'UAH') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'USD') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateUAH.rates.USD}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'EUR') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateUAH.rates.EUR}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'EUR') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateUSD.rates.EUR}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'USD') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'USD') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput! / this.currentRateEUR.rates.USD}, {emitEvent: false})        
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'EUR') {
-      this.leftSide.patchValue({leftInput: this.rightSide.value.rightInput}, {emitEvent: false})        
+  changeRightSide() {
+    const leftDropValue = this.leftSide.value.leftDrop
+    const rightDropValue = this.rightSide.value.rightDrop
+    const USDcurrencyRate = this.currentRateUSD.rates
+    const UAHcurrencyRate = this.currentRateUAH.rates
+    const EURcurrencyRate = this.currentRateEUR.rates
+
+    if (leftDropValue === 'USD') {
+      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * USDcurrencyRate[rightDropValue as keyof typeof USDcurrencyRate] }, this.falseEmitEvent)
+    } else if (leftDropValue === 'UAH') {
+      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * UAHcurrencyRate[rightDropValue as keyof typeof UAHcurrencyRate] }, this.falseEmitEvent)
+    } else if (leftDropValue === 'EUR') {
+      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * EURcurrencyRate[rightDropValue as keyof typeof EURcurrencyRate] }, this.falseEmitEvent)
     }
   }
 
-  changeRightSide() {
-    if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'UAH') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateUSD.rates.UAH}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'UAH') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateEUR.rates.UAH}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'UAH') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'USD') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateUAH.rates.USD}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'UAH' && this.rightSide.value.rightDrop === 'EUR') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateUAH.rates.EUR}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'EUR') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateUSD.rates.EUR}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'USD' && this.rightSide.value.rightDrop === 'USD') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput}, {emitEvent: false})
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'USD') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput! * this.currentRateEUR.rates.USD}, {emitEvent: false})        
-    } else if (this.leftSide.value.leftDrop === 'EUR' && this.rightSide.value.rightDrop === 'EUR') {
-      this.rightSide.patchValue({rightInput: this.leftSide.value.leftInput}, {emitEvent: false})        
+  changeLeftSide() {
+    const leftDropValue = this.leftSide.value.leftDrop
+    const rightDropValue = this.rightSide.value.rightDrop
+    const USDcurrencyRate = this.currentRateUSD.rates
+    const UAHcurrencyRate = this.currentRateUAH.rates
+    const EURcurrencyRate = this.currentRateEUR.rates
+
+    if (rightDropValue === 'USD') {
+      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * USDcurrencyRate[leftDropValue as keyof typeof USDcurrencyRate] }, this.falseEmitEvent)
+    } else if (rightDropValue === 'UAH') {
+      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * UAHcurrencyRate[leftDropValue as keyof typeof UAHcurrencyRate] }, this.falseEmitEvent)
+    } else if (rightDropValue === 'EUR') {
+      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * EURcurrencyRate[leftDropValue as keyof typeof EURcurrencyRate] }, this.falseEmitEvent)
     }
   }
 
   replace() {
     const leftDropValue = this.leftSide.value.leftDrop
     const rightDropValue = this.rightSide.value.rightDrop
-    this.leftSide.patchValue({leftDrop: rightDropValue}, {emitEvent: false})
-    this.rightSide.patchValue({rightDrop:leftDropValue}, {emitEvent: false})
+    this.leftSide.patchValue({ leftDrop: rightDropValue }, this.falseEmitEvent)
+    this.rightSide.patchValue({ rightDrop: leftDropValue }, this.falseEmitEvent)
     this.changeRightSide()
     this.changeLeftSide()
   }

@@ -12,7 +12,7 @@ export class ApiService {
 
   getCurrentExchange(currency: string) {
     const params = new HttpParams({
-      fromObject: {base: currency}
+      fromObject: {symbols: 'USD,EUR,UAH', base: currency}
     })
 
     return  this.http.get<CurrencyInfo>(this.requestURL, {params})
