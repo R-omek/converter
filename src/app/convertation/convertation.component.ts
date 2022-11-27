@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
+import { switchMap, tap } from 'rxjs';
 import { CurrencyInfo } from '../shared/models/response';
 import { ApiService } from '../shared/services/api.service';
 
@@ -8,27 +9,25 @@ import { ApiService } from '../shared/services/api.service';
   templateUrl: './convertation.component.html',
   styleUrls: ['./convertation.component.scss']
 })
+
 export class ConvertationComponent implements OnInit {
 
-  currencies = [
-    'EUR',
-    'USD',
-    'UAH'
-  ]
-  currentRateUAH!: CurrencyInfo
-  currentRateUSD!: CurrencyInfo
-  currentRateEUR!: CurrencyInfo
+  currencies: string[] = []
+  
+  leftCurrencyRate: object = {}
+  rightCurrencyRate: object = {}
 
-  falseEmitEvent =  { emitEvent: false }
+  rightInputResult: number = 0;
+  leftInputResult: number = 0;
 
+  leftDropValue!: string
+  rightDropValue!: string
 
-  leftSide = new FormGroup({
+  form = new FormGroup({
     leftInput: new FormControl(0),
-    leftDrop: new FormControl('USD')
-  })
-  rightSide = new FormGroup({
+    leftDrop: new FormControl('UAH'),
     rightInput: new FormControl(0),
-    rightDrop: new FormControl('UAH')
+    rightDrop: new FormControl('USD')
   })
 
   constructor(
@@ -36,61 +35,54 @@ export class ConvertationComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.api.getCurrentExchange('UAH').subscribe((resp) => this.currentRateUAH = resp)
-    this.api.getCurrentExchange('USD').subscribe((resp) => this.currentRateUSD = resp)
-    this.api.getCurrentExchange('EUR').subscribe((resp) => this.currentRateEUR = resp)
-
-    this.leftSide.valueChanges.subscribe(
-      () => {
-        this.changeRightSide()
-      }
-    )
-
-    this.rightSide.valueChanges.subscribe(
-      () => {
-        this.changeLeftSide()
+    this.api.getCurrentExchange('USD').subscribe(
+      (resp: CurrencyInfo) => {
+        this.currencies = Object.keys(resp.rates)
       }
     )
   }
 
-  changeRightSide() {
-    const leftDropValue = this.leftSide.value.leftDrop
-    const rightDropValue = this.rightSide.value.rightDrop
-    const USDcurrencyRate = this.currentRateUSD.rates
-    const UAHcurrencyRate = this.currentRateUAH.rates
-    const EURcurrencyRate = this.currentRateEUR.rates
+  convertCurrencies() {
+    this.leftDropValue = this.form.value.leftDrop!.toString()
+    this.rightDropValue = this.form.value.rightDrop!.toString()
 
-    if (leftDropValue === 'USD') {
-      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * USDcurrencyRate[rightDropValue as keyof typeof USDcurrencyRate] }, this.falseEmitEvent)
-    } else if (leftDropValue === 'UAH') {
-      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * UAHcurrencyRate[rightDropValue as keyof typeof UAHcurrencyRate] }, this.falseEmitEvent)
-    } else if (leftDropValue === 'EUR') {
-      this.rightSide.patchValue({ rightInput: this.leftSide.value.leftInput! * EURcurrencyRate[rightDropValue as keyof typeof EURcurrencyRate] }, this.falseEmitEvent)
-    }
-  }
+    this.api.getCurrentExchange(this.rightDropValue).pipe(
+      tap((resp: CurrencyInfo) => {
+        this.rightCurrencyRate = resp.rates
+      }),
+      switchMap(() => this.api.getCurrentExchange(this.leftDropValue))
+    ).subscribe(
+      (resp: CurrencyInfo) => {
+        this.leftCurrencyRate = resp.rates
 
-  changeLeftSide() {
-    const leftDropValue = this.leftSide.value.leftDrop
-    const rightDropValue = this.rightSide.value.rightDrop
-    const USDcurrencyRate = this.currentRateUSD.rates
-    const UAHcurrencyRate = this.currentRateUAH.rates
-    const EURcurrencyRate = this.currentRateEUR.rates
-
-    if (rightDropValue === 'USD') {
-      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * USDcurrencyRate[leftDropValue as keyof typeof USDcurrencyRate] }, this.falseEmitEvent)
-    } else if (rightDropValue === 'UAH') {
-      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * UAHcurrencyRate[leftDropValue as keyof typeof UAHcurrencyRate] }, this.falseEmitEvent)
-    } else if (rightDropValue === 'EUR') {
-      this.leftSide.patchValue({ leftInput: this.rightSide.value.rightInput! * EURcurrencyRate[leftDropValue as keyof typeof EURcurrencyRate] }, this.falseEmitEvent)
-    }
+        if (this.form.value.leftInput !== this.leftInputResult) {
+          this.rightInputResult = this.form.value.leftInput! * this.leftCurrencyRate[this.rightDropValue as keyof typeof this.leftCurrencyRate]
+          this.form.patchValue({
+            rightInput: this.rightInputResult
+          })
+          this.leftInputResult = this.form.value.rightInput! / this.leftCurrencyRate[this.rightDropValue as keyof typeof this.leftCurrencyRate]
+        } else if (this.form.value.rightInput !== this.rightInputResult) {
+          this.leftInputResult = this.form.value.rightInput! * this.rightCurrencyRate[this.leftDropValue as keyof typeof this.rightCurrencyRate]
+          this.form.patchValue({
+            leftInput: this.leftInputResult
+          })
+          this.rightInputResult = this.form.value.leftInput! / this.rightCurrencyRate[this.leftDropValue as keyof typeof this.rightCurrencyRate]
+        } else {
+          this.rightInputResult = this.form.value.leftInput! * this.leftCurrencyRate[this.rightDropValue as keyof typeof this.leftCurrencyRate]
+          this.form.patchValue({
+            rightInput: this.rightInputResult
+          })
+          this.leftInputResult = this.form.value.rightInput! / this.leftCurrencyRate[this.rightDropValue as keyof typeof this.leftCurrencyRate]
+        }
+      })
   }
 
   replace() {
-    const leftDropValue = this.leftSide.value.leftDrop
-    const rightDropValue = this.rightSide.value.rightDrop
-    this.leftSide.patchValue({ leftDrop: rightDropValue }, this.falseEmitEvent)
-    this.rightSide.patchValue({ rightDrop: leftDropValue }, this.falseEmitEvent)
-    this.changeRightSide()
-    this.changeLeftSide()
+    this.leftDropValue = this.form.value.leftDrop!.toString()
+    this.rightDropValue = this.form.value.rightDrop!.toString()
+    this.form.patchValue({
+      leftDrop: this.rightDropValue,
+      rightDrop: this.leftDropValue
+    })
   }
 }
